@@ -1,2 +1,2 @@
 print("hello worlaaad")
-ああ
+and
