@@ -1,6 +1,7 @@
 import pygame
 boardSize = 9
 board = [[0] * boardSize for _ in range(boardSize)]
+promotionLine = 3
 
 canMove = (((-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)), 
 ((0, -1)), 
@@ -31,8 +32,15 @@ def FindCanMoveLine(x, y, dx, dy):
 class Piece():
     def __init__(self, type, team):
         self.typeA = type
+        if 1 <= self.typeA <= 5:
+            self.typeB = 2
+        elif self.type == 0:
+            self.typeB = 0
+        else:
+            self.typeB = self.typeA + 1
         self.type = type
         self.team = team
+        self.promotion = False
         self.canMove = []
     def Hold(self, x, y):
         self.canMove = []
@@ -56,7 +64,13 @@ class Piece():
                 
     def Move(self, bx, by, gx, gy):
         board[by][bx], board[gy][gx] = board[gy][gx], board[by][bx]
-        
+        if self.promotion:
+            if self.team == 0 and gy < promotionLine:
+                self.type = self.typeB
+                self.promotion = True
+            elif self.team == 1 and boardSize - promotionLine <= gy:
+                self.type = self.typeB
+                self.promotion = True
 
 def CreatePiece(x, y, type, team):
     board[y][x] = Piece(type, team)
