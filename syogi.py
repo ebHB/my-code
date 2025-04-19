@@ -1,10 +1,12 @@
 import pygame
+pygame.init()
 boardSize = 9
 board = [[0] * boardSize for _ in range(boardSize)]
 promotionLine = 3
 screenSize = 800
 pieceSize = screenSize // boardSize
 screen = pygame.display.set_mode((screenSize, screenSize + pieceSize*2))
+pieceFont = pygame.font.SysFont("meiryo", 60)
 
 canMove = (((-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)), 
 ((0, -1), (100, 100)), 
@@ -16,6 +18,8 @@ canMove = (((-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)
 ((-1, -1), (1, -1), (-1, 1), (1, 1)), 
 (), 
 ((0, -1), (-1, 0), (1, 0), (0, 1)))
+name = ("王", "歩", "金", "銀", "桂", "香", "飛", "", "角", "")
+name_promotion = ("王", "と", "金", "全", "圭", "杏", "龍", "", "馬", "")
 #0王 1歩 2金 3銀 4桂馬 (5香車 6飛車 7成飛車 8角 9成角)
 
 def FindCanMove(x, y, list):
@@ -145,6 +149,13 @@ def DrawPiece(x, y, r, g, b):
 def DrawCanMove(x, y):
     pygame.draw.rect(screen, (0, 255, 0), (x*pieceSize, y*pieceSize + pieceSize, pieceSize, pieceSize))
 
+def DrawText(t, x, y, r=0, g=0, b=0):
+    text = pieceFont.render(str(t), True, (r, g, b))
+    text_rect = text.get_rect(center=(x*pieceSize + pieceSize//2, y*pieceSize + pieceSize//2 + pieceSize))
+    if board[y][x].team == 1:
+        text = pygame.transform.flip(text, True, True)
+    screen.blit(text, text_rect)
+
 def Draw(hold):
     screen.fill((0, 0, 0))
     pygame.draw.rect(screen, (139, 69, 19), (0, pieceSize, screenSize, pieceSize*boardSize))
@@ -158,6 +169,11 @@ def Draw(hold):
                     DrawPiece(x, y, 255, 0, 0)
                 else:
                     DrawPiece(x, y, 0, 0, 255)
+            if board[y][x] != 0:
+                if board[y][x].promotion == False:
+                    DrawText(name[board[y][x].typeA], x, y)
+                else:
+                    DrawText(name_promotion[board[y][x].typeA], x, y)
     pygame.display.flip()
 
 Start()
