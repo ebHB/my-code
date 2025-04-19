@@ -143,12 +143,6 @@ def Click(x, y, hold, turn):
 def CreatePiece(x, y, type, team):
     board[y][x] = Piece(type, team)
 
-def DrawPiece(x, y, r, g, b):
-    pygame.draw.circle(screen, (r, g, b), (x*pieceSize + pieceSize//2, y*pieceSize + pieceSize//2 + pieceSize), pieceSize//2)
-
-def DrawCanMove(x, y):
-    pygame.draw.rect(screen, (0, 255, 0), (x*pieceSize, y*pieceSize + pieceSize, pieceSize, pieceSize))
-
 def DrawText(t, x, y, r=0, g=0, b=0):
     text = pieceFont.render(str(t), True, (r, g, b))
     text_rect = text.get_rect(center=(x*pieceSize + pieceSize//2, y*pieceSize + pieceSize//2 + pieceSize))
@@ -156,24 +150,30 @@ def DrawText(t, x, y, r=0, g=0, b=0):
         text = pygame.transform.flip(text, True, True)
     screen.blit(text, text_rect)
 
+def DrawPiece(x, y, piece):
+    pygame.draw.circle(screen, (214, 198, 175), (x*pieceSize + pieceSize//2, y*pieceSize + pieceSize//2 + pieceSize), pieceSize//2)
+    if piece.promotion:
+        if piece.typeA == 0 or piece.typeA == 2:
+            DrawText(name_promotion[piece.typeA], x, y)
+        else:
+            DrawText(name_promotion[piece.typeA], x, y, 255, 0, 0)
+    else:
+        DrawText(name[piece.typeA], x, y)
+
+def DrawCanMove(x, y):
+    pygame.draw.rect(screen, (0, 255, 0), (x*pieceSize, y*pieceSize + pieceSize, pieceSize, pieceSize))
+
+
 def Draw(hold):
     screen.fill((0, 0, 0))
-    pygame.draw.rect(screen, (139, 69, 19), (0, pieceSize, screenSize, pieceSize*boardSize))
+    pygame.draw.rect(screen, (230, 180, 34), (0, pieceSize, screenSize, pieceSize*boardSize))
     if hold:
         for canMoveNow in board[hold[1]][hold[0]].canMove:
             DrawCanMove(canMoveNow[0], canMoveNow[1])
     for y in range(boardSize):
         for x in range(boardSize):
             if board[y][x] != 0:
-                if board[y][x].team == 0:
-                    DrawPiece(x, y, 255, 0, 0)
-                else:
-                    DrawPiece(x, y, 0, 0, 255)
-            if board[y][x] != 0:
-                if board[y][x].promotion == False:
-                    DrawText(name[board[y][x].typeA], x, y)
-                else:
-                    DrawText(name_promotion[board[y][x].typeA], x, y)
+                DrawPiece(x, y, board[y][x])
     pygame.display.flip()
 
 Start()
