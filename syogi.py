@@ -3,10 +3,11 @@ pygame.init()
 boardSize = 9
 board = [[0] * boardSize for _ in range(boardSize)]
 promotionLine = 3
-screenSize = 800
+screenSize = 550
 pieceSize = screenSize // boardSize
 screen = pygame.display.set_mode((screenSize, screenSize + pieceSize*2))
-pieceFont = pygame.font.SysFont("meiryo", 60)
+pieceFont = pygame.font.SysFont("meiryo", screenSize*3//40)
+quantityFont = pygame.font.SysFont(False, screenSize*3//40)
 
 canMove = (((-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)), 
 ((0, -1), (100, 100)), 
@@ -143,22 +144,36 @@ def Click(x, y, hold, turn):
 def CreatePiece(x, y, type, team):
     board[y][x] = Piece(type, team)
 
-def DrawText(t, x, y, r=0, g=0, b=0):
-    text = pieceFont.render(str(t), True, (r, g, b))
-    text_rect = text.get_rect(center=(x*pieceSize + pieceSize//2, y*pieceSize + pieceSize//2 + pieceSize))
-    if board[y][x].team == 1:
+def DrawQuantityText(t, x, y, team):
+    text = quantityFont.render(str(t), True, (255, 255, 255))
+    if team == 0:
+        text_rect = text.get_rect(center=(x*pieceSize + pieceSize//2 + pieceSize//3, y*pieceSize + pieceSize//2 + pieceSize//3 + pieceSize))
+    else:
+        text_rect = text.get_rect(center=(x*pieceSize + pieceSize//2 - pieceSize//3, y*pieceSize + pieceSize//2 - pieceSize//3 + pieceSize))
+    if team == 1:
         text = pygame.transform.flip(text, True, True)
     screen.blit(text, text_rect)
 
-def DrawPiece(x, y, piece):
+def DrawText(t, team, x, y, r=0, g=0, b=0):
+    text = pieceFont.render(str(t), True, (r, g, b))
+    text_rect = text.get_rect(center=(x*pieceSize + pieceSize//2, y*pieceSize + pieceSize//2 + pieceSize))
+    if team == 1:
+        text = pygame.transform.flip(text, True, True)
+    screen.blit(text, text_rect)
+
+def DrawPiece(x, y, piece, hold=None):
     pygame.draw.circle(screen, (214, 198, 175), (x*pieceSize + pieceSize//2, y*pieceSize + pieceSize//2 + pieceSize), pieceSize//2)
+    if hold != None:
+        DrawText(name[piece], hold, x, y)
+        DrawQuantityText(holdPiece[hold].count(piece), x, y, hold)
+        return
     if piece.promotion:
         if piece.typeA == 0 or piece.typeA == 2:
-            DrawText(name_promotion[piece.typeA], x, y)
+            DrawText(name_promotion[piece.typeA], piece.team, x, y)
         else:
-            DrawText(name_promotion[piece.typeA], x, y, 255, 0, 0)
+            DrawText(name_promotion[piece.typeA], piece.team, x, y, 255, 0, 0)
     else:
-        DrawText(name[piece.typeA], x, y)
+        DrawText(name[piece.typeA], piece.team, x, y)
 
 def DrawCanMove(x, y):
     pygame.draw.rect(screen, (0, 255, 0), (x*pieceSize, y*pieceSize + pieceSize, pieceSize, pieceSize))
@@ -174,6 +189,8 @@ def Draw(hold):
         for x in range(boardSize):
             if board[y][x] != 0:
                 DrawPiece(x, y, board[y][x])
+    for i, piece in enumerate(sorted(list(set(holdPiece[0])))):
+        DrawPiece(i, 9, piece, 0)
     pygame.display.flip()
 
 Start()
