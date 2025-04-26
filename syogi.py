@@ -1,9 +1,16 @@
+import tkinter as tk
+
+root = tk.Tk()
+width = root.winfo_screenwidth()
+height = root.winfo_screenheight()
+root.destroy()
+
 import pygame
 pygame.init()
 boardSize = 9
 board = [[0] * boardSize for _ in range(boardSize)]
 promotionLine = 3
-screenSize = 550
+screenSize = min(width, height) * 7 // 10
 pieceSize = screenSize // boardSize
 screen = pygame.display.set_mode((screenSize, screenSize + pieceSize*2))
 pieceFont = pygame.font.SysFont("meiryo", screenSize*3//40)
@@ -122,16 +129,21 @@ def Start():
             CreatePiece(i, 6, 1, 0)
 
 def Click(x, y, hold, turn):
+    global holdPiece
     x, y = x//pieceSize, y//pieceSize
     if 1 <= y <= 9:
         y -= 1
         if hold:
+            if hold == int:
+                CreatePiece(x, y, hold, turn)
+                turn = (turn+1)%2
+                return False, turn
             holdPiece = board[hold[1]][hold[0]]
             for canMoveNow in holdPiece.canMove:
                 if [x, y] == canMoveNow:
                     holdPiece.Move(hold[0], hold[1], x, y)
                     turn = (turn+1)%2
-                    break
+                    return False, turn
         else:
             selectPiece = board[y][x]
             if selectPiece != 0:
@@ -139,7 +151,14 @@ def Click(x, y, hold, turn):
                     selectPiece.Hold(x, y)
                     (selectPiece.canMove)
                     return (x, y), turn
-        return False, turn
+    else:
+        if turn == 0:
+            index = x
+        else:
+            index = 8-x
+        if index < len(holdPiece[turn]):
+            return enumerate(sorted(list(set(holdPiece[0][index])))), turn
+    return False, turn
 
 def CreatePiece(x, y, type, team):
     board[y][x] = Piece(type, team)
@@ -147,26 +166,34 @@ def CreatePiece(x, y, type, team):
 def DrawQuantityText(t, x, y, team):
     text = quantityFont.render(str(t), True, (255, 255, 255))
     if team == 0:
-        text_rect = text.get_rect(center=(x*pieceSize + pieceSize//2 + pieceSize//3, y*pieceSize + pieceSize//2 + pieceSize//3 + pieceSize))
+        text_rect = text.get_rect(center=(x*pieceSize + pieceSize//2 + pieceSize//3, y*pieceSize + pieceSize//2 + pieceSize//3))
     else:
-        text_rect = text.get_rect(center=(x*pieceSize + pieceSize//2 - pieceSize//3, y*pieceSize + pieceSize//2 - pieceSize//3 + pieceSize))
+        text_rect = text.get_rect(center=(x*pieceSize + pieceSize//2 - pieceSize//3, y*pieceSize + pieceSize//2 - pieceSize//3))
     if team == 1:
         text = pygame.transform.flip(text, True, True)
     screen.blit(text, text_rect)
 
 def DrawText(t, team, x, y, r=0, g=0, b=0):
     text = pieceFont.render(str(t), True, (r, g, b))
-    text_rect = text.get_rect(center=(x*pieceSize + pieceSize//2, y*pieceSize + pieceSize//2 + pieceSize))
+    text_rect = text.get_rect(center=(x*pieceSize + pieceSize//2, y*pieceSize + pieceSize//2))
     if team == 1:
         text = pygame.transform.flip(text, True, True)
     screen.blit(text, text_rect)
 
-def DrawPiece(x, y, piece, hold=None):
-    pygame.draw.circle(screen, (214, 198, 175), (x*pieceSize + pieceSize//2, y*pieceSize + pieceSize//2 + pieceSize), pieceSize//2)
-    if hold != None:
-        DrawText(name[piece], hold, x, y)
-        DrawQuantityText(holdPiece[hold].count(piece), x, y, hold)
-        return
+def DrawHoldPiece(i, piece, team):
+    if team == 0:
+        x = i
+        y = 10
+    else:
+        x = 8-i
+        y = 0
+    pygame.draw.circle(screen, (214, 198, 175), (x*pieceSize + pieceSize//2, y*pieceSize + pieceSize//2), pieceSize//2)
+    DrawText(name[piece], team, x, y)
+    DrawQuantityText(holdPiece[team].count(piece), x, y, team)
+
+def DrawPiece(x, y, piece):
+    y += 1
+    pygame.draw.circle(screen, (214, 198, 175), (x*pieceSize + pieceSize//2, y*pieceSize + pieceSize//2), pieceSize//2)
     if piece.promotion:
         if piece.typeA == 0 or piece.typeA == 2:
             DrawText(name_promotion[piece.typeA], piece.team, x, y)
@@ -190,7 +217,9 @@ def Draw(hold):
             if board[y][x] != 0:
                 DrawPiece(x, y, board[y][x])
     for i, piece in enumerate(sorted(list(set(holdPiece[0])))):
-        DrawPiece(i, 9, piece, 0)
+        DrawHoldPiece(i, piece, 0)
+    for i, piece in enumerate(sorted(list(set(holdPiece[1])))):
+        DrawHoldPiece(i, piece, 1)
     pygame.display.flip()
 
 Start()
