@@ -128,37 +128,39 @@ def Start():
             CreatePiece(i, 2, 1, 1)
             CreatePiece(i, 6, 1, 0)
 
-def Click(x, y, hold, turn):
+def Click(x, y, hold, holdType, turn):
     global holdPiece
     x, y = x//pieceSize, y//pieceSize
     if 1 <= y <= 9:
         y -= 1
-        if hold:
-            if hold == int:
-                CreatePiece(x, y, hold, turn)
-                turn = (turn+1)%2
-                return False, turn
-            holdPiece = board[hold[1]][hold[0]]
-            for canMoveNow in holdPiece.canMove:
+        if holdType == 0:
+            nowHoldPiece = board[hold[1]][hold[0]]
+            for canMoveNow in nowHoldPiece.canMove:
                 if [x, y] == canMoveNow:
-                    holdPiece.Move(hold[0], hold[1], x, y)
+                    nowHoldPiece.Move(hold[0], hold[1], x, y)
                     turn = (turn+1)%2
-                    return False, turn
+                    return None, None, turn
+        elif holdType == 1:
+            CreatePiece(x, y, hold, turn)
+            del(holdPiece[turn])
+            turn = (turn+1)%2
+            return None, None, turn
         else:
             selectPiece = board[y][x]
             if selectPiece != 0:
                 if selectPiece.team == turn:
                     selectPiece.Hold(x, y)
                     (selectPiece.canMove)
-                    return (x, y), turn
+                    return (x, y), 0, turn
     else:
         if turn == 0:
-            index = x
+            pieceIndex = x
         else:
-            index = 8-x
-        if index < len(holdPiece[turn]):
-            return enumerate(sorted(list(set(holdPiece[0][index])))), turn
-    return False, turn
+            pieceIndex = 8-x
+        if pieceIndex < len(set(holdPiece[turn])):
+            pieceIndex = holdPiece.index(sorted(list(set(holdPiece[0])))[pieceIndex])
+            return pieceIndex, 1, turn
+    return None, None, turn
 
 def CreatePiece(x, y, type, team):
     board[y][x] = Piece(type, team)
@@ -206,12 +208,13 @@ def DrawCanMove(x, y):
     pygame.draw.rect(screen, (0, 255, 0), (x*pieceSize, y*pieceSize + pieceSize, pieceSize, pieceSize))
 
 
-def Draw(hold):
+def Draw(hold, holdType):
     screen.fill((0, 0, 0))
     pygame.draw.rect(screen, (230, 180, 34), (0, pieceSize, screenSize, pieceSize*boardSize))
-    if hold:
-        for canMoveNow in board[hold[1]][hold[0]].canMove:
-            DrawCanMove(canMoveNow[0], canMoveNow[1])
+    if hold != None:
+        if holdType == 0:
+            for canMoveNow in board[hold[1]][hold[0]].canMove:
+                DrawCanMove(canMoveNow[0], canMoveNow[1])
     for y in range(boardSize):
         for x in range(boardSize):
             if board[y][x] != 0:
@@ -224,14 +227,15 @@ def Draw(hold):
 
 Start()
 loop = True
-hold = False
+hold = None
 holdPiece = [[], []]
 turn = 0
+holdType = None
 while loop:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             loop = False
         if event.type == pygame.MOUSEBUTTONDOWN:
-            hold, turn = Click(pygame.mouse.get_pos()[0], pygame.mouse.get_pos()[1], hold, turn)
-    Draw(hold)
+            hold, holdType, turn = Click(pygame.mouse.get_pos()[0], pygame.mouse.get_pos()[1], hold, holdType, turn)
+    Draw(hold, holdType)
 pygame.quit()
