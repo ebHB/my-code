@@ -130,37 +130,40 @@ def Start():
 
 def Click(x, y, hold, holdType, turn):
     global holdPiece
+    rHold, rHoldType, rTurn, rIsPromotionTime = None, None, turn, False
     x, y = x//pieceSize, y//pieceSize
     if 1 <= y <= 9:
         y -= 1
-        if holdType == 0:
-            nowHoldPiece = board[hold[1]][hold[0]]
-            for canMoveNow in nowHoldPiece.canMove:
-                if [x, y] == canMoveNow:
-                    nowHoldPiece.Move(hold[0], hold[1], x, y)
-                    turn = (turn+1)%2
-                    return None, None, turn
-        elif holdType == 1:
-            CreatePiece(x, y, hold, turn)
-            del(holdPiece[turn])
-            turn = (turn+1)%2
-            return None, None, turn
+        if holdType == 0 or holdType == 1:
+            if holdType == 0:
+                nowHoldPiece = board[hold[1]][hold[0]]
+                for canMoveNow in nowHoldPiece.canMove:
+                    if [x, y] == canMoveNow:
+                        if ((turn==0 and 3<=hold[1] and y<=2) or (turn==0 and hold[1]<=5 and 6<=y)):
+                            rIsPromotionTime = True
+                        nowHoldPiece.Move(hold[0], hold[1], x, y)
+                        break
+            elif holdType == 1:
+                CreatePiece(x, y, holdPiece[turn][hold], turn)
+                del(holdPiece[turn][hold])
+            rTurn = (turn+1)%2
         else:
             selectPiece = board[y][x]
             if selectPiece != 0:
                 if selectPiece.team == turn:
                     selectPiece.Hold(x, y)
-                    (selectPiece.canMove)
-                    return (x, y), 0, turn
+                    rHold = (x, y)
+                    rHoldType = 0
     else:
         if turn == 0:
-            pieceIndex = x
+            nowHoldPieceIndex = x
         else:
-            pieceIndex = 8-x
-        if pieceIndex < len(set(holdPiece[turn])):
-            pieceIndex = holdPiece.index(sorted(list(set(holdPiece[0])))[pieceIndex])
-            return pieceIndex, 1, turn
-    return None, None, turn
+            nowHoldPieceIndex = 8-x
+        if nowHoldPieceIndex < len(set(holdPiece[turn])):
+            nowHoldPieceIndex = holdPiece[turn].index(sorted(list(set(holdPiece[turn])))[nowHoldPieceIndex])
+            rHold = nowHoldPieceIndex
+            rHoldType = rHoldType
+    return rHold, rHoldType, rTurn, rIsPromotionTime
 
 def CreatePiece(x, y, type, team):
     board[y][x] = Piece(type, team)
@@ -231,11 +234,15 @@ hold = None
 holdPiece = [[], []]
 turn = 0
 holdType = None
+isPromotionTime = False
 while loop:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             loop = False
         if event.type == pygame.MOUSEBUTTONDOWN:
-            hold, holdType, turn = Click(pygame.mouse.get_pos()[0], pygame.mouse.get_pos()[1], hold, holdType, turn)
+            if isPromotionTime == 10:
+                print(1)
+            else:
+                hold, holdType, turn, isPromotionTime = Click(pygame.mouse.get_pos()[0], pygame.mouse.get_pos()[1], hold, holdType, turn)
     Draw(hold, holdType)
 pygame.quit()
